@@ -17,94 +17,97 @@ import net.minecraftforge.client.event.InputEvent.MouseButton.Pre;
 import java.util.List;
 
 public class TrainMap {
+    private static final String XAERO_GUI_MAP_CLASS = "xaero.map.gui.GuiMap";
+    private static boolean requesting;
 
-	private static boolean requesting;
+    public TrainMap() {
+    }
 
-	public TrainMap() {
-	}
+    public static void tick() {
+        if (!AllConfigs.client().showTrainMapOverlay.get() || !isGuiMapOpen()) {
+            if (requesting)
+                TrainMapSyncClient.stopRequesting();
+            requesting = false;
+            return;
+        }
 
-	public static void tick() {
-		if (!AllConfigs.client().showTrainMapOverlay.get() || !isGuiMapOpen()) {
-			if (requesting)
-				TrainMapSyncClient.stopRequesting();
-			requesting = false;
-			return;
-		}
-		TrainMapManager.tick();
-		requesting = true;
-		TrainMapSyncClient.requestData();
-	}
+        TrainMapManager.tick();
+        requesting = true;
+        TrainMapSyncClient.requestData();
+    }
 
-	private static boolean isGuiMapOpen() {
-		Minecraft mc = Minecraft.getInstance();
-		if (mc.screen == null) return false;
-		return mc.screen.getClass().getName().equals("xaero.map.gui.GuiMap");
-	}
+    public static void mouseClick(Pre event) {
+        Minecraft mc = Minecraft.getInstance();
 
-	public static void mouseClick(Pre event) {
-		Minecraft mc = Minecraft.getInstance();
-		if (!(mc.screen != null && mc.screen.getClass().getName().equals("xaero.map.gui.GuiMap")))
-			return;
+        if (!isGuiMapOpen()) {
+            return;
+        }
 
-		Window window = mc.getWindow();
-		double mX = mc.mouseHandler.xpos() * window.getGuiScaledWidth() / window.getScreenWidth();
-		double mY = mc.mouseHandler.ypos() * window.getGuiScaledHeight() / window.getScreenHeight();
+        Window window = mc.getWindow();
+        double mX = mc.mouseHandler.xpos() * window.getGuiScaledWidth() / window.getScreenWidth();
+        double mY = mc.mouseHandler.ypos() * window.getGuiScaledHeight() / window.getScreenHeight();
 
-		if (TrainMapManager.handleToggleWidgetClick(Mth.floor(mX), Mth.floor(mY), 3, 30))
-			event.setCanceled(true);
-	}
+        if (TrainMapManager.handleToggleWidgetClick(Mth.floor(mX), Mth.floor(mY), 3, 30)) {
+            event.setCanceled(true);
+        }
+    }
 
-	// GuiGraphics graphics, double x, double z, int mX, int mY, float pt
-	public static void onRender(GuiGraphics graphics, int mX,
-								int mY, float pt, double mapScale, double x, double z, int mPosX, int mPosZ) {
+    public static void onRender(GuiGraphics graphics, int mX, int mY, float pt, double mapScale, double x, double z, int mPosX, int mPosZ) {
 
-		if (!AllConfigs.client().showTrainMapOverlay.get()) {
-			renderToggleWidgetAndTooltip(graphics, mX, mY);
-			return;
-		}
+        if (!AllConfigs.client().showTrainMapOverlay.get()) {
+            renderToggleWidgetAndTooltip(graphics, mX, mY);
+            return;
+        }
 
-		Minecraft mc = Minecraft.getInstance();
-		Window window = mc.getWindow();
-		int screenWidth = window.getGuiScaledWidth();
-		int screenHeight = window.getGuiScaledHeight();
+        Minecraft mc = Minecraft.getInstance();
+        Window window = mc.getWindow();
+        int screenWidth = window.getGuiScaledWidth();
+        int screenHeight = window.getGuiScaledHeight();
 
-		double guiScale = (double) window.getScreenWidth() / screenWidth;
-		double scale = mapScale / guiScale;
+        double guiScale = (double) window.getScreenWidth() / screenWidth;
+        double scale = mapScale / guiScale;
 
-		PoseStack pose = graphics.pose();
-		pose.pushPose();
+        PoseStack pose = graphics.pose();
+        pose.pushPose();
 
-		pose.translate(screenWidth / 2.0f, screenHeight / 2.0f, 0);
-		pose.scale((float) scale, (float) scale, 1);
-		pose.translate(-x, -z, 0);
+        pose.translate(screenWidth / 2.0f, screenHeight / 2.0f, 0);
+        pose.scale((float) scale, (float) scale, 1);
+        pose.translate(-x, -z, 0);
 
-		Rect2i bounds =
-			new Rect2i(Mth.floor(-screenWidth / 2.0f / scale + x), Mth.floor(-screenHeight / 2.0f / scale + z),
-				Mth.floor(screenWidth / scale), Mth.floor(screenHeight / scale));
-		//LogUtils.getLogger().warn(bounds.getX() + " " + bounds.getY() + " " + bounds.getWidth() + " " + bounds.getHeight());
-		//LogUtils.getLogger().warn(String.valueOf(CreateClient.RAILWAYS.trains.values()));
-		List<FormattedText> tooltip =
-			TrainMapManager.renderAndPick(graphics, Mth.floor(mPosX), Mth.floor(mPosZ), pt,false, bounds);
+        Rect2i bounds =
+            new Rect2i(Mth.floor(-screenWidth / 2.0f / scale + x), Mth.floor(-screenHeight / 2.0f / scale + z),
+                Mth.floor(screenWidth / scale), Mth.floor(screenHeight / scale));
+        //LogUtils.getLogger().warn(bounds.getX() + " " + bounds.getY() + " " + bounds.getWidth() + " " + bounds.getHeight());
+        //LogUtils.getLogger().warn(String.valueOf(CreateClient.RAILWAYS.trains.values()));
+        List<FormattedText> tooltip =
+            TrainMapManager.renderAndPick(graphics, Mth.floor(mPosX), Mth.floor(mPosZ), pt, false, bounds);
 
-		pose.popPose();
+        pose.popPose();
 
-		if (!renderToggleWidgetAndTooltip(graphics, mX, mY) && tooltip != null)
-			RemovedGuiUtils.drawHoveringText(graphics, tooltip, mX, mY, screenWidth, screenHeight, 256, mc.font);
-	}
+        if (!renderToggleWidgetAndTooltip(graphics, mX, mY) && tooltip != null) {
+            RemovedGuiUtils.drawHoveringText(graphics, tooltip, mX, mY, screenWidth, screenHeight, 256, mc.font);
+        }
+    }
 
-	private static boolean renderToggleWidgetAndTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
-		Minecraft mc = Minecraft.getInstance();
-		Window window = mc.getWindow();
-		int screenWidth = window.getGuiScaledWidth();
-		int screenHeight = window.getGuiScaledHeight();
+    private static boolean renderToggleWidgetAndTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        Minecraft mc = Minecraft.getInstance();
+        Window window = mc.getWindow();
+        int screenWidth = window.getGuiScaledWidth();
+        int screenHeight = window.getGuiScaledHeight();
 
-		TrainMapManager.renderToggleWidget(graphics, 3, 30);
-		if (!TrainMapManager.isToggleWidgetHovered(mouseX, mouseY, 3, 30))
-			return false;
+        TrainMapManager.renderToggleWidget(graphics, 3, 30);
+        if (!TrainMapManager.isToggleWidgetHovered(mouseX, mouseY, 3, 30)) {
+            return false;
+        }
 
-		RemovedGuiUtils.drawHoveringText(graphics, List.of(Component.translatable("create.train_map.toggle")
-		), mouseX, mouseY + 20, screenWidth, screenHeight, 256, mc.font);
-		return true;
-	}
+        RemovedGuiUtils.drawHoveringText(graphics, List.of(Component.translatable("create.train_map.toggle")
+        ), mouseX, mouseY + 20, screenWidth, screenHeight, 256, mc.font);
+        return true;
+    }
 
+    private static boolean isGuiMapOpen() {
+        Minecraft mc = Minecraft.getInstance();
+
+        return mc.screen != null && mc.screen.getClass().getName().equals(XAERO_GUI_MAP_CLASS);
+    }
 }

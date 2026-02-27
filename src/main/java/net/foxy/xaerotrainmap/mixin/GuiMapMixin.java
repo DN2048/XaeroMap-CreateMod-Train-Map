@@ -26,7 +26,7 @@ public class GuiMapMixin {
     @Shadow(remap = false)
     private int mouseBlockPosZ;
 
-    @Inject(method = "render", at = @At("TAIL"), remap = false)
+    @Inject(method = "render", at = @At("TAIL"))
     public void renderTrain(
         GuiGraphics guiGraphics,
         int scaledMouseX,

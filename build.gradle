@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id "net.neoforged.moddev.legacyforge" version "2.0.74"
+    id 'net.neoforged.moddev.legacyforge' version '2.0.74'
 }
 
 java {
@@ -30,22 +30,6 @@ legacyForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
-        server {
-            server()
-            programArgument '--nogui'
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-        }
-
-        gameTestServer {
-            type = "gameTestServer"
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-        }
-
-        data {
-            data()
-            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
-        }
-
         configureEach {
             systemProperty 'forge.logging.markers', 'REGISTRIES'
 
@@ -65,7 +49,6 @@ configurations {
 }
 
 repositories {
-    //mavenCentral()
     maven { url = "https://maven.createmod.net" } // Create, Ponder, Flywheel
     maven { url = "https://maven.ithundxr.dev/mirror" } // Registrate
     maven { url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/" } // ForgeConfigAPIPort
@@ -76,33 +59,36 @@ repositories {
 }
 
 dependencies {
-    compileOnly(annotationProcessor("org.spongepowered:mixin:0.8.5:processor"))
+    annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
+    annotationProcessor "io.github.llamalad7:mixinextras-common:0.4.1"
+    modImplementation "io.github.llamalad7:mixinextras-forge:0.4.1"
 
-    modImplementation "xaero.lib:xaerolib-forge-1.20.1:1.1.0+"
-    modImplementation "xaero.map:xaeroworldmap-forge-1.20.1:1.40.11"
+    modImplementation "xaero.lib:xaerolib-forge-${minecraft_version}:${xaero_lib_version}+"
+    modImplementation "xaero.map:xaeroworldmap-forge-${minecraft_version}:${xaero_world_map_version}";
 
-    modImplementation("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
+    modImplementation ("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
     modImplementation "net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}"
 
     modCompileOnly "dev.engine-room.flywheel:flywheel-forge-api-${minecraft_version}:${flywheel_version}"
     modRuntimeOnly "dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}"
     modImplementation "com.tterrag.registrate:Registrate:${registrate_version}"
-
-    modCompileOnly annotationProcessor("io.github.llamalad7:mixinextras-common:0.4.1")
-    modImplementation "io.github.llamalad7:mixinextras-forge:0.4.1"
 }
 
 tasks.named("processResources", ProcessResources).configure {
     var replaceProperties = [
-            minecraft_version      : minecraft_version,
-            minecraft_version_range: minecraft_version_range,
-            loader_version_range   : loader_version_range,
-            mod_id                 : mod_id,
-            mod_name               : mod_name,
-            mod_license            : mod_license,
-            mod_version            : mod_version,
-            mod_authors            : mod_authors,
-            mod_description        : mod_description
+            minecraft_version            : minecraft_version,
+            minecraft_version_range      : minecraft_version_range,
+            forge_version_range          : forge_version_range,
+            loader_version_range         : loader_version_range,
+            xaero_world_map_version_range: xaero_world_map_version_range,
+            create_version_range         : create_version_range,
+            mod_id                       : mod_id,
+            mod_name                     : mod_name,
+            mod_license                  : mod_license,
+            mod_version                  : mod_version,
+            mod_authors                  : mod_authors,
+            mod_description              : mod_description,
+            mod_credits                  : mod_credits
     ]
 
     inputs.properties replaceProperties
@@ -112,21 +98,18 @@ tasks.named("processResources", ProcessResources).configure {
     }
 }
 
-sourceSets.main.resources { srcDir 'src/generated/resources' }
+mixin {
+    add sourceSets.main, "xaerotrainmap.refmap.json"
+    config "xaerotrainmap.mixins.json"
+}
 
 tasks.withType(JavaCompile).configureEach {
     it.options.encoding = 'UTF-8'
     it.options.release = 17
 }
 
-
-tasks.withType(GenerateModuleMetadata) {
+tasks.withType(GenerateModuleMetadata).configureEach {
     enabled = false
-}
-
-javadoc {
-    // Suppress annoying warnings when generating JavaDoc files.
-    options.addStringOption('Xdoclint:none', '-quiet')
 }
 
 jar {

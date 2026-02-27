@@ -10,34 +10,34 @@ displayURL="https://github.com/DN2048/XaeroMap-CreateMod-Train-Map"
 issueTrackerURL="https://github.com/DN2048/XaeroMap-CreateMod-Train-Map/issues"
 #updateJSONURL="https://change.me.example.invalid/updates.json"
 #logoFile="examplemod.png"
-credits="Thanks 1Foxy2 to for the port from Journey Map to Xaero's World Map"
+credits='''${mod_credits}'''
 authors="${mod_authors}"
 description='''${mod_description}'''
 
 [[dependencies.${mod_id}]]
     modId="forge"
     mandatory=true
-    versionRange="[47,)"
+    versionRange="${forge_version_range}"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.20.1]"
+    versionRange="${minecraft_version}"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
     modId="xaeroworldmap"
     mandatory=true
-    versionRange="[1.40.11,)"
+    versionRange="${xaero_world_map_version_range}"
     ordering="AFTER"
     side="CLIENT"
 
 [[dependencies.${mod_id}]]
     modId="create"
     mandatory=true
-    versionRange="[6.0.8,6.1.0)"
+    versionRange="${create_version_range}"
     ordering="NONE"
     side="CLIENT"
